@@ -1,0 +1,32 @@
+#include <espnow.h>
+#include <ESP8266WiFi.h>
+
+// MAC address of the receiver ESP8266
+uint8_t receiverMAC[] = {0xD8, 0xBF, 0xC0, 0x0F, 0xDA, 0xC5}; // Change this!
+
+typedef struct struct_message {
+  int value;
+} struct_message;
+
+struct_message myData;
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA); // Must be station mode
+
+  if (esp_now_init() != 0) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
+  esp_now_add_peer(receiverMAC, ESP_NOW_ROLE_SLAVE, 1, NULL, 0);
+}
+
+void loop() {
+  myData.value = random(0, 100); // Generate a random number
+  esp_now_send(receiverMAC, (uint8_t *) &myData, sizeof(myData));
+  Serial.print("Sent: ");
+  Serial.println(myData.value);
+  delay(1000);
+}
