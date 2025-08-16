@@ -1,0 +1,61 @@
+#include <espnow.h>
+#include <ESP8266WiFi.h>
+
+// Define button pins
+#define button1 D0
+#define button2 D1
+#define button3 D2
+#define button4 D4
+
+// MAC address of the receiver ESP8266
+uint8_t receiverMAC[] = {0x48, 0x55, 0x19, 0x15, 0x4A, 0x15}; // Change this!
+
+// Data structure to send
+typedef struct struct_message {
+  int value1;
+  int value2;
+  int value3;
+  int value4;
+} struct_message;
+
+struct_message myData = {0, 0, 0, 0};
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA); // Must be station mode
+
+  // Set buttons as input with pullups
+  pinMode(button1, INPUT_PULLUP);
+  pinMode(button2, INPUT_PULLUP);
+  pinMode(button3, INPUT_PULLUP);
+  pinMode(button4, INPUT_PULLUP);
+
+  // Init ESP-NOW
+  if (esp_now_init() != 0) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  esp_now_set_self_role(ESP_NOW_ROLE_CONTROLLER);
+  esp_now_add_peer(receiverMAC, ESP_NOW_ROLE_SLAVE, 1, NULL, 0);
+}
+
+void loop() {
+  // Read button states (LOW when pressed, HIGH when not)
+  myData.value1 = digitalRead(button1) == LOW ? 1 : 0;
+  myData.value2 = digitalRead(button2) == LOW ? 1 : 0;
+  myData.value3 = digitalRead(button3) == LOW ? 1 : 0;
+  myData.value4 = digitalRead(button4) == LOW ? 1 : 0;
+
+  // Send data
+  esp_now_send(receiverMAC, (uint8_t *) &myData, sizeof(myData));
+
+  // Print values
+  Serial.print("Sent -> ");
+  Serial.print("B1: "); Serial.print(myData.value1);
+  Serial.print(" | B2: "); Serial.print(myData.value2);
+  Serial.print(" | B3: "); Serial.print(myData.value3);
+  Serial.print(" | B4: "); Serial.println(myData.value4);
+
+  delay(200); // Small delay for stability
+}
