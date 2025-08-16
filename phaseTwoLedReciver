@@ -1,0 +1,50 @@
+#include <espnow.h>
+#include <ESP8266WiFi.h>
+
+#define led1 D0
+#define led2 D1
+#define led3 D2
+#define led4 D3
+
+typedef struct struct_message {
+  int value1;
+  int value2;
+  int value3;
+  int value4;
+} struct_message;
+
+struct_message incomingData;
+
+void onDataRecv(uint8_t * mac, uint8_t *incomingDataBuffer, uint8_t len) {
+  memcpy(&incomingData, incomingDataBuffer, sizeof(incomingData));
+
+  digitalWrite(led1,incomingData.value1 ? LOW : HIGH);
+  digitalWrite(led2,incomingData.value2 ? LOW : HIGH);
+  digitalWrite(led3,incomingData.value3 ? LOW : HIGH);
+  digitalWrite(led4,incomingData.value4 ? LOW : HIGH);
+
+  Serial.print("Received: ");
+  Serial.println(incomingData.value1);
+}
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA); // Must be station mode
+
+  pinMode(led1,OUTPUT);
+  pinMode(led2,OUTPUT);
+  pinMode(led3,OUTPUT);
+  pinMode(led4,OUTPUT);
+
+  if (esp_now_init() != 0) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
+  esp_now_register_recv_cb(onDataRecv);
+}
+
+void loop() {
+  // Empty - data is received via onDataRecv() automatically
+}
